@@ -1,0 +1,37 @@
+version: '3.7'
+
+services:
+  todos-react-native-service:
+    image: postgres
+    restart: always
+    user: postgres
+    secrets:
+      - db-password
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    expose:
+      - 5432
+    healthcheck:
+      test: [ "CMD", "pg_isready" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+    environment:
+      POSTGRES_DB_PORT: "5432"
+      POSTGRES_DB_HOST: "localhost"
+      POSTGRES_PASSWORD_FILE: /run/secrets/db-password
+      POSTGRES_USER: postgres
+      POSTGRES_DB: todos
+    networks:
+        - todos_react_native_service_network
+volumes:
+  db-data:
+
+secrets:
+  db-password:
+    file: database/password.txt
+
+networks:
+  todos_react_native_service_network:
+        driver: bridge
