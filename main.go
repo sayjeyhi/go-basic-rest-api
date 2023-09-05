@@ -4,59 +4,40 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
+	"github.com/joho/godotenv"
 	"log"
 	"sayjeyhi.com/todolist/database"
-	"sayjeyhi.com/todolist/models"
+	"sayjeyhi.com/todolist/router"
 )
 
-func initDB() {
-	var err error
-	dsn := "host=localhost user=postgres password=postgres port=5432"
-
-	database.DbConnection, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
-	})
-
-	if err != nil {
-		log.Fatal("Failed to connect to database. \n", err)
+type (
+	GlobalErrorHandlerResp struct {
+		Success bool   `json:"success"`
+		Message string `json:"message"`
 	}
-
-	log.Println("Connected! 🎉")
-	log.Println("Running migrations 🚀")
-
-	errConnection := database.DbConnection.AutoMigrate(&models.Todo{})
-	if errConnection != nil {
-		return
-	}
-
-	log.Println("Migration did run successfully 🎉")
-}
-
-func setUpRoutes(app *fiber.App) {
-	app.Get("/healthz", func(c *fiber.Ctx) error {
-		return c.SendString("Health check ✅")
-	})
-
-	api := app.Group("/api")
-	v1 := api.Group("/v1")
-	v1.Get("/todos", models.GetTodos)
-	v1.Get("/todos/:id", models.GetTodo)
-	v1.Post("/todos", models.CreateTodo)
-	v1.Delete("/todos/:id", models.DeleteTodo)
-	v1.Patch("/todos/:id", models.UpdateTodo)
-}
+)
 
 func main() {
+	// Load .env file
+	if err := godotenv.Load(".env"); err != nil {
+		panic("Error loading .env file")
+	}
+
 	app := fiber.New(fiber.Config{
 		JSONEncoder: json.Marshal,
 		JSONDecoder: json.Unmarshal,
+		// Global custom error handler
+		ErrorHandler: func(c *fiber.Ctx, err error) error {
+			return c.Status(fiber.StatusBadRequest).JSON(GlobalErrorHandlerResp{
+				Success: false,
+				Message: err.Error(),
+			})
+		},
 	})
 	app.Use(cors.New())
 
-	initDB()
+	database.InitDB()
+	router.setUpRoutes()
 	setUpRoutes(app)
 
 	log.Fatal(app.Listen(":3010"))
