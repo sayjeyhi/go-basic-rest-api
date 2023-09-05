@@ -37,8 +37,7 @@ func main() {
 	app.Use(cors.New())
 
 	database.InitDB()
-	router.setUpRoutes()
-	setUpRoutes(app)
+	router.SetUpRoutes(app)
 
 	log.Fatal(app.Listen(":3010"))
 }

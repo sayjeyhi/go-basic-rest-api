@@ -1,11 +1,14 @@
 package database
 
 import (
+	"fmt"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 	"log"
+	"sayjeyhi.com/todolist/config"
 	"sayjeyhi.com/todolist/models"
+	"strconv"
 )
 
 // DbConnection is the database connection
@@ -15,7 +18,21 @@ var (
 
 func InitDB() {
 	var err error
-	dsn := "host=localhost user=postgres password=postgres port=5432"
+
+	p := config.Config("DB_PORT")
+	port, err := strconv.ParseUint(p, 10, 32)
+	if err != nil {
+		panic(err)
+	}
+
+	dsn := fmt.Sprintf(
+		"host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+		config.Config("DB_HOST"),
+		port,
+		config.Config("DB_USER"),
+		config.Config("DB_PASSWORD"),
+		config.Config("DB_NAME"),
+	)
 
 	DbConnection, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info),
