@@ -26,17 +26,20 @@ func InitDB() {
 	}
 
 	dsn := fmt.Sprintf(
-		"host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+		"host=%s port=%d user=%s password=%s sslmode=disable TimeZone=%s",
 		config.Config("DB_HOST"),
 		port,
 		config.Config("DB_USER"),
 		config.Config("DB_PASSWORD"),
-		config.Config("DB_NAME"),
+		config.Config("DB_TIMEZONE"),
 	)
 
 	DbConnection, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info),
 	})
+
+	createDatabaseCommand := fmt.Sprintf("CREATE DATABASE %s", config.Config("DB_NAME"))
+	DbConnection.Exec(createDatabaseCommand)
 
 	if err != nil {
 		log.Fatal("Failed to connect to database. \n", err)
